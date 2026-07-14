@@ -41,6 +41,15 @@ header p {
   opacity: 0.85;
 }
 
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
 .container {
   max-width: 860px;
   margin: 0 auto;

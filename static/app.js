@@ -8,6 +8,13 @@ const hintEl = document.getElementById("hint");
 const resultsEl = document.getElementById("results");
 const modeSearchBtn = document.getElementById("mode-search");
 const modeAskBtn = document.getElementById("mode-ask");
+const badgeEl = document.getElementById("article-count");
+
+fetch(`${API_BASE}/status`).then(r => r.json()).then(d => {
+  badgeEl.textContent = `${d.articles} статей`;
+}).catch(() => {
+  badgeEl.textContent = "ошибка загрузки";
+});
 
 function setMode(newMode) {
   mode = newMode;

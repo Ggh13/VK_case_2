@@ -6,7 +6,7 @@ import requests
 
 NEWSAPI_KEY = "77189746e3c14597ae54b75cfc386309"
 OUT_PATH = Path(__file__).resolve().parents[2] / "data" / "telegram_posts.jsonl"
-PAGE_SIZE = 200
+PAGE_SIZE = 100
 LANGUAGE = os.getenv("NEWS_LANGUAGE", "en")
 COUNTRY = os.getenv("NEWS_COUNTRY", "us")
 
@@ -16,13 +16,15 @@ def main():
 
     print(f"Загрузка последних {PAGE_SIZE} новостей (NewsAPI)...")
 
+    query = os.getenv("NEWS_QUERY", "news")
     resp = requests.get(
-        "https://newsapi.org/v2/top-headlines",
+        "https://newsapi.org/v2/everything",
         params={
             "apiKey": NEWSAPI_KEY,
-            "country": COUNTRY,
+            "q": query,
             "pageSize": PAGE_SIZE,
             "language": LANGUAGE,
+            "sortBy": "publishedAt",
         },
         timeout=30,
     )

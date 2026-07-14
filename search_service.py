@@ -47,6 +47,9 @@ qdrant = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 log.info("Загрузка эмбеддера %s...", EMBED_MODEL_NAME)
 embedder = SentenceTransformer(EMBED_MODEL_NAME, device=get_device())
 
+article_count = 0
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     for _ in range(30):
@@ -58,41 +61,41 @@ async def lifespan(app: FastAPI):
     log.info("Qdrant доступен")
 
     json_path = DATA_DIR / "telegram_posts.jsonl"
-    if not json_path.exists():
-        log.info("Нет файла %s — запуск парсинга NewsAPI...", json_path)
-        from src.parsing import parse_news
-        parse_news.main()
+    log.info("Парсинг свежих новостей NewsAPI...")
+    from src.parsing import parse_news
+    parse_news.main()
 
-    if json_path.exists():
-        if not qdrant.collection_exists(COLLECTION_NAME):
-            log.info("Коллекция %s не найдена — автоиндексация...", COLLECTION_NAME)
-            posts = []
-            with open(json_path, "r", encoding="utf-8") as f:
-                for line in f:
-                    posts.append(json.loads(line))
-            log.info("Загружено %d постов", len(posts))
+    log.info("Удаление старой коллекции %s...", COLLECTION_NAME)
+    if qdrant.collection_exists(COLLECTION_NAME):
+        qdrant.delete_collection(COLLECTION_NAME)
 
-            dim = embedder.get_embedding_dimension()
-            qdrant.create_collection(
-                collection_name=COLLECTION_NAME,
-                vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-            )
+    posts = []
+    with open(json_path, "r", encoding="utf-8") as f:
+        for line in f:
+            posts.append(json.loads(line))
+    log.info("Загружено %d статей для индексации", len(posts))
 
-            BATCH_SIZE = 64
-            for i in range(0, len(posts), BATCH_SIZE):
-                batch = posts[i : i + BATCH_SIZE]
-                texts = [f"passage: {p['text']}" for p in batch]
-                vectors = embedder.encode(texts, show_progress_bar=False, normalize_embeddings=True)
-                points = [
-                    PointStruct(id=int(p["id"]), vector=vec.tolist(), payload=p)
-                    for p, vec in zip(batch, vectors)
-                ]
-                qdrant.upsert(collection_name=COLLECTION_NAME, points=points)
+    dim = embedder.get_embedding_dimension()
+    qdrant.create_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+    )
 
-            count = qdrant.count(collection_name=COLLECTION_NAME)
-            log.info("Индекс создан: %d документов", count.count)
-        else:
-            log.info("Коллекция %s уже существует", COLLECTION_NAME)
+    BATCH_SIZE = 64
+    for i in range(0, len(posts), BATCH_SIZE):
+        batch = posts[i : i + BATCH_SIZE]
+        texts = [f"passage: {p['text']}" for p in batch]
+        vectors = embedder.encode(texts, show_progress_bar=False, normalize_embeddings=True)
+        points = [
+            PointStruct(id=int(p["id"]), vector=vec.tolist(), payload=p)
+            for p, vec in zip(batch, vectors)
+        ]
+        qdrant.upsert(collection_name=COLLECTION_NAME, points=points)
+
+    count = qdrant.count(collection_name=COLLECTION_NAME)
+    global article_count
+    article_count = count.count
+    log.info("Индексация завершена: %d документов в Qdrant", article_count)
 
     if os.getenv("SKIP_OLLAMA_LOAD") != "1":
         try:
@@ -131,6 +134,11 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 @app.get("/")
 def index():
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/status")
+def get_status():
+    return {"articles": article_count, "collection": COLLECTION_NAME}
 
 
 
