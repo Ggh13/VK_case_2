@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Новостной поиск</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header>
+  <h1>Поиск по новостям</h1>
+  <p>NewsAPI — векторный поиск по последним новостям</p>
+</header>
+
+<div class="container">
+  <div class="controls">
+    <div class="mode-toggle">
+      <button id="mode-search" class="active">Поиск по постам</button>
+      <button id="mode-ask">Спросить ИИ</button>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="query" placeholder="Например: технологии, финансы, здоровье..." />
+      <button id="submit-btn">Найти</button>
+    </div>
+    <div class="hint" id="hint">Найдет посты по вашему запросу, отсортирует по релевантности</div>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div id="results" class="results-grid">
+    <div class="empty-state">
+      <p>Введите запрос, чтобы начать поиск по новостям</p>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
