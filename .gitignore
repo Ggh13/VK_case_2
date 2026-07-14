@@ -3,8 +3,4 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
-data/telegram_session.session
 data/telegram_posts.jsonl
-data/bm25_index.pkl
-data/docs_meta.jsonl
-data/qdrant_storage/

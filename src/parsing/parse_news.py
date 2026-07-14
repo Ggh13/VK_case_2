@@ -6,7 +6,7 @@ import requests
 
 NEWSAPI_KEY = "77189746e3c14597ae54b75cfc386309"
 OUT_PATH = Path(__file__).resolve().parents[2] / "data" / "telegram_posts.jsonl"
-PAGE_SIZE = 30
+PAGE_SIZE = 200
 LANGUAGE = os.getenv("NEWS_LANGUAGE", "en")
 COUNTRY = os.getenv("NEWS_COUNTRY", "us")
 
